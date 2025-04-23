@@ -23,6 +23,14 @@
               </div>
             </div>
           </div>
+
+          <!-- 未讀訊息 -->
+          <template v-if="showUnRead">
+            <div class="h-14 p-4 unread-container">
+              {{ unReadMessage }}
+            </div>
+          </template>
+
           <div class="input-container h-20 p-4 border-[#adb163] bg-[#cbce99] ">
             <div class="flex gap-4 h-full">
               <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
@@ -58,6 +66,8 @@ const connectStatus = reactive({
 });
 const isAtBottom = ref(false);
 const messageContainer = useTemplateRef('messageContainer');
+const showUnRead = ref(false);
+const unReadMessage = ref('');
 
 onMounted(()=>{
   connectWebSocket(); 
@@ -90,6 +100,8 @@ const connectWebSocket = () =>{
       type : 'system' 
     };
     socket.value.send(JSON.stringify(message));
+
+    scrollToBottom();
   };
 
   // 接收訊息
@@ -105,12 +117,19 @@ const connectWebSocket = () =>{
     });
 
     await nextTick();
-    console.log(messageContainer.value.scrollTop, messageContainer.value.scrollHeight, messageContainer.value.clientHeight)
+    // console.log(messageContainer.value.scrollTop, messageContainer.value.scrollHeight, messageContainer.value.clientHeight)
     
-    if(messageContainer.value.scrollTop + messageContainer.value.clientHeight <= messageContainer.value.scrollHeight){
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    // if(messageContainer.value.scrollTop + messageContainer.value.clientHeight <= messageContainer.value.scrollHeight){
+    //   messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    // }else{
+    //   messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    // }
+    if (isAtBottom.value) {
+      scrollToBottom(); // 如果滾動條在底部，自動滾動到底部
     }else{
-      messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+      showUnRead.value = true;
+      unReadMessage.value = message.content;
+      console.log(unReadMessage.value, message);
     }
   }
 
@@ -146,12 +165,17 @@ const setConnectConfig = (status, text, color) =>{
 
 // 滾動至底部
 const scrollToBottom = () =>{
-  // 
+  if (messageContainer.value) {
+    messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
+    isAtBottom.value = true; // 更新狀態為在底部
+  }
 }
 
 const handleScroll = (event) =>{
-  const { scrollTop, scrollHeight } = event.target;
-  console.log(scrollTop, scrollHeight)
+  if (messageContainer.value) {
+    const { scrollTop, scrollHeight, clientHeight } = messageContainer.value;
+    isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 10; // 判斷是否接近底部
+  }
 }
 </script>
 
@@ -171,6 +195,10 @@ const handleScroll = (event) =>{
     &.disabled{
       background-color: rgb(146, 145, 145);
     } 
+  }
+
+  .unread-container{
+    background-color: rgba(245, 233, 207, .7);
   }
 }
 </style>
