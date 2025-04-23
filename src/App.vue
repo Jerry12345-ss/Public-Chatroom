@@ -25,8 +25,8 @@
           </div>
           <div class="input-container h-20 p-4 border-[#adb163] bg-[#cbce99] ">
             <div class="flex gap-4 h-full">
-              <!-- @keydown.enter="sendMessage" -->
-              <input v-model.trim="clientMessage" @keydown.enter="sendMessage" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
+              <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
+              <input v-model.trim="clientMessage" @keypress.enter="sendMessage" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
               <button @click="sendMessage" :disabled="!isConnected" :class="[!isConnected ? 'cursor-not-allowed' : 'cursor-pointer', { disabled : !isConnected }]" class="message-btn px-4 py-2 text-white bg-[#949755] rounded transition-colors hover:bg-[#6a6c3d]">發送</button>
             </div>
           </div>
@@ -179,5 +179,4 @@ const handleScroll = (event) =>{
   1. 如果畫面在最下面, 要自動移動
   2. 如果不是最下面 : 要做那種像 Line 那種? 只是不做那種有幾則未讀那樣, 頂多給個箭頭到最下面這樣
   3. 針對於訊息的部分, CSS 要額外處理... (最麻煩)
-  4. 鍵盤 keydown enter 有怪問題(打字的時候)
 -->
