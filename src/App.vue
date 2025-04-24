@@ -2,34 +2,53 @@
   <div class="container mx-auto px-4 my-4">
     <div class="flex flex-col justify-center items-center gap-2">
       <h1 class="text-3xl !font-medium py-4 text-gray-700">簡易聊天室</h1>
+      
+      <!-- 會動的日期與時間 + 用戶名稱 -->
+      <div class="flex flex-col gap-2">
+        <div class="text-gray-600">用戶名稱 : {{ username }}</div>
+        <div>當前時間 : </div>
+      </div>
 
       <div class="chat-container h-[800px] w-full min-w-[330px] max-w-[500px] rounded border border-gray-300">
-        <div class="flex flex-col justify-between h-full">
-          <div class="messages-container flex-1 p-4 overflow-y-auto" ref="messageContainer" @scroll="handleScroll">
-            <div class="flex flex-col gap-4">
-              <!-- 這裏針對 css 還要處理 -->
-              <div v-for="message in messages" :key="message.time" :id="message.time">
-                <div class="flex flex-col" :class="{'max-w-[70%]' : message.type !== 'system', 'ml-auto items-end' : message.type === 'myself', 'mr-auto items-start' : message.type === 'other' }">
-                  <div class="p-4 rounded inline-block h-auto w-full message-content" 
-                    :class="[messageBgColor(message), { '!w-fit' : message.type !== 'system' }]"
-                    >
-                    <div class="flex items-center gap-2 flex-wrap">
-                      <div class="text-gray-600">{{ message.sender }} : </div>
-                      <div class="overflow-hidden break-words text-gray-600">{{ message.content }}</div>
+        <div class="flex flex-col justify-between h-full relative">
+          <div class="messages-container flex-1 overflow-y-auto" ref="messageContainer" @scroll="handleScroll">
+            <div class="p-4">
+              <div class="flex flex-col gap-4">
+                <!-- 這裏針對 css 還要處理 -->
+                <div v-for="message in messages" :key="message.time" :id="message.time">
+                  <div class="flex flex-col" :class="{'max-w-[70%]' : message.type !== 'system', 'ml-auto items-end' : message.type === 'myself', 'mr-auto items-start' : message.type === 'other' }">
+                    <div class="p-4 rounded inline-block h-auto w-full message-content" 
+                      :class="[messageBgColor(message), { '!w-fit' : message.type !== 'system' }]"
+                      >
+                      <div class="flex flex-col">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <div class="text-gray-600">{{ message.sender }} : </div>
+                          <div class="overflow-hidden break-words text-gray-600">{{ message.content }}</div>
+                        </div>
+                        
+                        <div class="text-xs text-gray-400 mt-2">{{ message.time }}</div>
+                      </div>
                     </div>
                   </div>
-                  <div class="text-sm text-gray-400 mt-2">{{ message.time }}</div>
                 </div>
               </div>
             </div>
-          </div>
+            <!-- 當有未讀訊息時, 向下箭頭會消失 -->
+            <!-- 未讀訊息 -->
+            <template v-if="!isAtBottom && !showUnRead">
+              <div class="absolute bottom-24 right-8 z-[100000]">
+                <button @click="scrollToBottom" style="box-shadow: 0 0 15px 3px rgba(0, 0, 0, .2);" class="cursor-pointer w-[40px] h-[40px] bg-[#adb163] rounded flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" style="fill: white;transform: ;msFilter:;"><path d="m18.707 12.707-1.414-1.414L13 15.586V6h-2v9.586l-4.293-4.293-1.414 1.414L12 19.414z"></path></svg>
+                </button>
+              </div>
+            </template>
 
-          <!-- 未讀訊息 -->
-          <template v-if="showUnRead">
-            <div class="h-14 p-4 unread-container">
-              {{ unReadMessage }}
-            </div>
-          </template>
+            <template v-if="showUnRead && unReadData?.type !== 'system'">
+              <div class="h-14 p-4 unread-container absolute bottom-20 w-full z-[100000] cursor-pointer" @click="scrollToBottom">
+                <div class="text-gray-600 truncate">{{ unReadData.sender }} : {{ unReadData.content }}</div>
+              </div>
+            </template>
+          </div>
 
           <div class="input-container h-20 p-4 border-[#adb163] bg-[#cbce99] ">
             <div class="flex gap-4 h-full">
@@ -67,7 +86,7 @@ const connectStatus = reactive({
 const isAtBottom = ref(false);
 const messageContainer = useTemplateRef('messageContainer');
 const showUnRead = ref(false);
-const unReadMessage = ref('');
+const unReadData = ref({});
 
 onMounted(()=>{
   connectWebSocket(); 
@@ -125,11 +144,11 @@ const connectWebSocket = () =>{
     //   messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
     // }
     if (isAtBottom.value) {
+      showUnRead.value = false;
       scrollToBottom(); // 如果滾動條在底部，自動滾動到底部
     }else{
       showUnRead.value = true;
-      unReadMessage.value = message.content;
-      console.log(unReadMessage.value, message);
+      unReadData.value = message;
     }
   }
 
@@ -155,6 +174,7 @@ const sendMessage = () =>{
 
   socket.value.send(JSON.stringify(message));
   clientMessage.value = '';
+  scrollToBottom();
 }
 
 const setConnectConfig = (status, text, color) =>{
@@ -175,6 +195,9 @@ const handleScroll = (event) =>{
   if (messageContainer.value) {
     const { scrollTop, scrollHeight, clientHeight } = messageContainer.value;
     isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 10; // 判斷是否接近底部
+    if (isAtBottom.value) {
+      showUnRead.value = false; // 如果在底部，隱藏未讀提示
+    } 
   }
 }
 </script>
@@ -198,13 +221,15 @@ const handleScroll = (event) =>{
   }
 
   .unread-container{
-    background-color: rgba(245, 233, 207, .7);
+    background-color: rgba(245, 233, 207, .8);
   }
 }
 </style>
 
 <!-- 
-  1. 如果畫面在最下面, 要自動移動
-  2. 如果不是最下面 : 要做那種像 Line 那種? 只是不做那種有幾則未讀那樣, 頂多給個箭頭到最下面這樣
-  3. 針對於訊息的部分, CSS 要額外處理... (最麻煩)
+  1. 針對於訊息的部分, CSS 要額外處理... (最麻煩)
+  2. 針對於滾輪那裡的程式碼要稍微研究一下
+  3. 版面的部分要調整, 打算將最上面擺到左邊(資訊欄), 右邊擺設聊天視窗
+
+  ** 如果還要新增其他功能, 比如說與 Firebase 串接, 製作自創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
 -->
