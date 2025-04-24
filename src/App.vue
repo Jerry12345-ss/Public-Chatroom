@@ -222,7 +222,7 @@ const handleScroll = (event) =>{
 <style lang="scss" scoped>
 // @mixin
 @mixin boxShadow($x, $y, $blur, $spread, $color){
-  box-shadow: $x, $y, $blur, $spread, $color;
+  box-shadow: $x $y $blur $spread $color;
 }
 @mixin backGround($color){
   background-color: $color;
