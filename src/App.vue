@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto max-w-[950px] min-h-screen px-4 py-12">
+  <div class="container mx-auto max-w-[950px] min-h-screen px-4 py-8">
     <div class="containers w-full flex items-center justify-center rounded">
       <div class="flex flex-col md:flex-row justify-around items-center gap-4 w-full p-4 py-6">
         <!-- 資訊欄 -->
@@ -220,29 +220,40 @@ const handleScroll = (event) =>{
 </script>
 
 <style lang="scss" scoped>
+// @mixin
+@mixin boxShadow($x, $y, $blur, $spread, $color){
+  box-shadow: $x, $y, $blur, $spread, $color;
+}
+@mixin backGround($color){
+  background-color: $color;
+}
+
 .containers{
-  background-color: rgba(234, 233, 233, 0.6);
+  @include backGround(rgba(234, 233, 233, 0.6));
+  @include boxShadow(0, 0, 50px, 10px, rgba(143, 142, 142, 0.2));
 }
 
 .chat-container{
-  background-image: url('../src/assets/img/chatroom-bg.jpg');
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
+  background : {
+    image : url('../src/assets/img/chatroom-bg.jpg');
+    position : center;
+    size : cover;
+    repeat : no-repeat;
+  }
   
   .message-content{
     min-height: fit-content;
-    box-shadow: 0 0 15px 3px rgba(0, 0, 0, .2);
+    @include boxShadow(0, 0, 15px, 3px, rgba(0, 0, 0, .2));
   }
 
   .message-btn{
     &.disabled{
-      background-color: rgb(146, 145, 145);
+      @include backGround(rgb(146, 145, 145));
     } 
   }
 
   .unread-container{
-    background-color: rgba(245, 233, 207, .8);
+    @include backGround(rgba(245, 233, 207, .8));
   }
 }
 </style>

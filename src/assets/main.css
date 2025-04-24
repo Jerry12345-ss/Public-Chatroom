@@ -1,17 +1,16 @@
-/* @import './base.css'; */
 @import 'tailwindcss';
- 
+
 body{
-  #app{
-    background-image: url('../src/assets/img/window-bg.jpg');
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-  }
+    #app{
+        background-image: url('../src/assets/img/window-bg.jpg');
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
 }
 
 @media screen and (min-width : 768px){
-  body{
-    overflow: hidden;
-  }
+    body{
+        overflow: hidden;
+    }
 }
