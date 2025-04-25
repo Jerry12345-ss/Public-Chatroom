@@ -32,16 +32,20 @@
             <div class="messages-container flex-1 overflow-y-auto" ref="messageContainer" @scroll="handleScroll">
               <div class="p-4">
                 <div class="flex flex-col gap-4">
-                  <!-- 這裏針對 css 還要處理 -->
                   <div v-for="message in messages" :key="message.time" :id="message.time">
                     <div class="flex flex-col" :class="{'max-w-[70%]' : message.type !== 'system', 'ml-auto items-end' : message.type === 'myself', 'mr-auto items-start' : message.type === 'other' }">
                       <div class="p-4 rounded inline-block h-auto w-full message-content" 
-                        :class="[messageBgColor(message), { '!w-fit' : message.type !== 'system' }]"
+                        :class="[messageBgColor(message), { '!w-fit' : message.type !== 'system' } ]"
                         >
                         <div class="flex flex-col">
-                          <div class="flex items-center gap-2 flex-wrap">
-                            <div class="text-gray-600">{{ message.sender }} : </div>
-                            <div class="overflow-hidden break-words text-gray-600">{{ message.content }}</div>
+                          <div>
+                            <span class="text-gray-600">{{ message.sender }} : </span>
+                            <template v-if="!message.isURL">
+                              <span class="text-gray-600" style="word-wrap: break-word; word-break: break-all; white-space: pre-wrap;" >{{ message.content }}</span>
+                            </template>
+                            <template v-else>
+                              <a :href="message.content" target="_blank" class="text-blue-500 underline" style="word-wrap: break-word; word-break: break-all; white-space: pre-wrap;">{{ message.content }}</a>
+                            </template>
                           </div>
                           
                           <div class="text-xs text-gray-400 mt-2">{{ message.time }}</div>
@@ -51,28 +55,43 @@
                   </div>
                 </div>
               </div>
-              <!-- 當有未讀訊息時, 向下箭頭會消失 -->
-              <!-- 未讀訊息 -->
+            </div>
+
+            <div class="input-container p-4 border-[#adb163] bg-[#cbce99] relative">
+              <!-- 向下箭頭 -->
               <template v-if="!isAtBottom && !showUnRead">
-                <div class="absolute bottom-24 right-8 z-[100000]">
+                <div class="absolute top-[-3.5rem] right-8 z-[100000]">
                   <button @click="scrollToBottom" style="box-shadow: 0 0 15px 3px rgba(0, 0, 0, .2);" class="cursor-pointer w-[40px] h-[40px] bg-[#adb163] rounded flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" style="fill: white;transform: ;msFilter:;"><path d="m18.707 12.707-1.414-1.414L13 15.586V6h-2v9.586l-4.293-4.293-1.414 1.414L12 19.414z"></path></svg>
                   </button>
                 </div>
               </template>
 
+              <!-- 未讀訊息 -->
               <template v-if="showUnRead && unReadData?.type !== 'system'">
-                <div class="h-14 p-4 unread-container absolute bottom-20 w-full z-[100000] cursor-pointer" @click="scrollToBottom">
+                <div class="h-14 p-4 unread-container absolute left-0 top-[-56px] w-full z-[100000] cursor-pointer" @click="scrollToBottom">
                   <div class="text-gray-600 truncate">{{ unReadData.sender }} : {{ unReadData.content }}</div>
                 </div>
               </template>
-            </div>
 
-            <div class="input-container h-20 p-4 border-[#adb163] bg-[#cbce99] ">
               <div class="flex gap-4 h-full">
+                <!-- <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4"> -->
+
                 <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
-                <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
-                <button @click="sendMessage" :disabled="!isConnected" :class="[!isConnected ? 'cursor-not-allowed' : 'cursor-pointer', { disabled : !isConnected }]" class="hidden sm:block message-btn px-4 py-2 text-white bg-[#949755] rounded transition-colors hover:bg-[#6a6c3d]">發送</button>
+                <textarea 
+                  v-model.trim="clientMessage"
+                  @keypress.enter="sendMessage"
+                  :disabled="!isConnected"
+                  :class="{ 'cursor-not-allowed' : !isConnected }"
+                  :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'"
+                  class="max-h-[150px] border border-[#adb163] rounded bg-[#efffc9] flex-1 outline-none px-4 py-2"
+                  rows="1"
+                  style="resize: none;"
+                  @input="autoResize"
+                ></textarea>
+                <div class="flex flex-col justify-end">
+                  <button @click="sendMessage" :disabled="!isConnected" :class="[!isConnected ? 'cursor-not-allowed' : 'cursor-pointer', { disabled : !isConnected }]" class="hidden sm:block message-btn px-4 py-2 text-white bg-[#949755] rounded transition-colors hover:bg-[#6a6c3d]">發送</button>
+                </div>
               </div>
             </div>
           </div>
@@ -140,7 +159,8 @@ const connectWebSocket = () =>{
   socket.value.onmessage = async(event) =>{
     const message = JSON.parse(event.data);
 
-    if(message.sender !== '系統') message.type =  message.sender === username.value ? 'myself' : 'other'
+    if(message.sender !== '系統') message.type = message.sender === username.value ? 'myself' : 'other';
+    checkIsURL(message);
 
     messages.value.push({
       ...message,
@@ -192,6 +212,7 @@ const sendMessage = () =>{
   socket.value.send(JSON.stringify(message));
   clientMessage.value = '';
   scrollToBottom();
+  document.querySelector('textarea').style.height = 'auto'; // 重置 textarea 高度
 }
 
 const setConnectConfig = (status, text, color) =>{
@@ -217,6 +238,47 @@ const handleScroll = (event) =>{
     } 
   }
 }
+
+// 判斷是否為超連結, 是則轉為超連結格式
+const checkIsURL = (message) =>{
+  const urlRegex = /(?:https?):\/\/(\w+:?\w*)?(\S+)(:\d+)?(\/|\/([\w#!:.?+=&%!\-\/]))?/;
+
+  if(urlRegex.test(message.content)){
+    message.isURL = true;
+  }else{
+    message.isURL = false;
+  }
+}
+
+const autoResize = (event) =>{
+  const textarea = event.target;
+  // 重置高度以準確計算
+  textarea.style.height = 'auto';
+  // 設置高度以適應內容，但不超過最大高度
+  textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+}
+
+const handleKeyDown = (event) => {
+  if (event.key === 'Enter') {
+    if (event.shiftKey) {
+      // Shift + Enter：換行
+      event.preventDefault(); // 阻止預設的換行行為
+      const textarea = event.target;
+      const cursorPosition = textarea.selectionStart;
+      clientMessage.value =
+        clientMessage.value.slice(0, cursorPosition) +
+        '\n' +
+        clientMessage.value.slice(cursorPosition);
+      nextTick(() => {
+        textarea.selectionStart = textarea.selectionEnd = cursorPosition + 1;
+      });
+    } else {
+      // Enter：發送訊息
+      event.preventDefault(); // 阻止預設的換行行為
+      sendMessage();
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -259,8 +321,12 @@ const handleScroll = (event) =>{
 </style>
 
 <!-- 
-  1. 針對於訊息的部分, CSS 要額外處理... (最麻煩)
-  2. 針對於滾輪那裡的程式碼要稍微研究一下
+  1. 針對於滾輪那裡的程式碼要稍微研究一下
+  2. 輸入欄位換成 textarea, shift + enter 換行, enter 發送訊息(要研究, 而且要自動將滾輪移動至最下面) => 這個有點麻煩, 可以先不搞這個
+  3. 輸入欄位有 max-height, 超過就要出現滾動條, 然後抱著他們(textarea + button)的 container 也要自同調整高度
+  4. continaer 調整高度時, 上面的內容要自通調整高度還位置...
+
+  textarea 會有大問題啊...
 
   ** 如果還要新增其他功能, 比如說與 Firebase 串接, 製作自創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
 -->
