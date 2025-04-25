@@ -75,20 +75,20 @@
               </template>
 
               <div class="flex gap-4 h-full">
-                <!-- <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4"> -->
+                <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
 
                 <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
-                <textarea 
+                <!-- <textarea 
                   v-model.trim="clientMessage"
                   @keypress.enter="sendMessage"
                   :disabled="!isConnected"
                   :class="{ 'cursor-not-allowed' : !isConnected }"
                   :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'"
-                  class="max-h-[150px] border border-[#adb163] rounded bg-[#efffc9] flex-1 outline-none px-4 py-2"
+                  class="min-h-[40px] max-h-[150px] border border-[#adb163] rounded bg-[#efffc9] flex-1 outline-none px-4 py-2"
                   rows="1"
                   style="resize: none;"
                   @input="autoResize"
-                ></textarea>
+                ></textarea> -->
                 <div class="flex flex-col justify-end">
                   <button @click="sendMessage" :disabled="!isConnected" :class="[!isConnected ? 'cursor-not-allowed' : 'cursor-pointer', { disabled : !isConnected }]" class="hidden sm:block message-btn px-4 py-2 text-white bg-[#949755] rounded transition-colors hover:bg-[#6a6c3d]">發送</button>
                 </div>
@@ -203,6 +203,8 @@ const connectWebSocket = () =>{
 
 // 寄送訊息
 const sendMessage = () =>{
+  if(clientMessage.value.trim() === null || clientMessage.value.trim() === '') return;
+
   const message= {
     sender : username.value,
     content : clientMessage.value,
@@ -210,9 +212,8 @@ const sendMessage = () =>{
   };
 
   socket.value.send(JSON.stringify(message));
-  clientMessage.value = '';
+  clientMessage.value = null;
   scrollToBottom();
-  document.querySelector('textarea').style.height = 'auto'; // 重置 textarea 高度
 }
 
 const setConnectConfig = (status, text, color) =>{
@@ -250,35 +251,37 @@ const checkIsURL = (message) =>{
   }
 }
 
-const autoResize = (event) =>{
-  const textarea = event.target;
-  // 重置高度以準確計算
-  textarea.style.height = 'auto';
-  // 設置高度以適應內容，但不超過最大高度
-  textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-}
+// const autoResize = (event) =>{
+//   // if(event.data === null || event.data === '') return;
 
-const handleKeyDown = (event) => {
-  if (event.key === 'Enter') {
-    if (event.shiftKey) {
-      // Shift + Enter：換行
-      event.preventDefault(); // 阻止預設的換行行為
-      const textarea = event.target;
-      const cursorPosition = textarea.selectionStart;
-      clientMessage.value =
-        clientMessage.value.slice(0, cursorPosition) +
-        '\n' +
-        clientMessage.value.slice(cursorPosition);
-      nextTick(() => {
-        textarea.selectionStart = textarea.selectionEnd = cursorPosition + 1;
-      });
-    } else {
-      // Enter：發送訊息
-      event.preventDefault(); // 阻止預設的換行行為
-      sendMessage();
-    }
-  }
-};
+//   const textarea = event.target;
+//   // // 重置高度以準確計算
+//   // textarea.style.height = 'auto';
+//   // 設置高度以適應內容，但不超過最大高度
+//   textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+// }
+
+// const handleKeyDown = (event) => {
+//   if (event.key === 'Enter') {
+//     if (event.shiftKey) {
+//       // Shift + Enter：換行
+//       event.preventDefault(); // 阻止預設的換行行為
+//       const textarea = event.target;
+//       const cursorPosition = textarea.selectionStart;
+//       clientMessage.value =
+//         clientMessage.value.slice(0, cursorPosition) +
+//         '\n' +
+//         clientMessage.value.slice(cursorPosition);
+//       nextTick(() => {
+//         textarea.selectionStart = textarea.selectionEnd = cursorPosition + 1;
+//       });
+//     } else {
+//       // Enter：發送訊息
+//       event.preventDefault(); // 阻止預設的換行行為
+//       sendMessage();
+//     }
+//   }
+// };
 </script>
 
 <style lang="scss" scoped>
@@ -322,11 +325,11 @@ const handleKeyDown = (event) => {
 
 <!-- 
   1. 針對於滾輪那裡的程式碼要稍微研究一下
+
+  ** 如果要用 textarea 會有以下 3 個問題, 但如果用 input 就不會有這些問題
   2. 輸入欄位換成 textarea, shift + enter 換行, enter 發送訊息(要研究, 而且要自動將滾輪移動至最下面) => 這個有點麻煩, 可以先不搞這個
   3. 輸入欄位有 max-height, 超過就要出現滾動條, 然後抱著他們(textarea + button)的 container 也要自同調整高度
   4. continaer 調整高度時, 上面的內容要自通調整高度還位置...
-
-  textarea 會有大問題啊...
 
   ** 如果還要新增其他功能, 比如說與 Firebase 串接, 製作自創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
 -->
