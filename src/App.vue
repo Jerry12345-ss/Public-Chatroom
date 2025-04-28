@@ -75,9 +75,9 @@
               </template>
 
               <div class="flex gap-4 h-full">
+                <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
                 <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
 
-                <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
                 <!-- <textarea 
                   v-model.trim="clientMessage"
                   @keypress.enter="sendMessage"
@@ -160,8 +160,8 @@ const connectWebSocket = () =>{
     const message = JSON.parse(event.data);
 
     if(message.sender !== '系統') message.type = message.sender === username.value ? 'myself' : 'other';
+    
     checkIsURL(message);
-
     messages.value.push({
       ...message,
       time : new Date().toLocaleTimeString(),
@@ -169,13 +169,7 @@ const connectWebSocket = () =>{
     });
 
     await nextTick();
-    // console.log(messageContainer.value.scrollTop, messageContainer.value.scrollHeight, messageContainer.value.clientHeight)
-    
-    // if(messageContainer.value.scrollTop + messageContainer.value.clientHeight <= messageContainer.value.scrollHeight){
-    //   messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-    // }else{
-    //   messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-    // }
+
     if(message.type === 'system'){
       showUnRead.value = false;
     }else{
@@ -225,17 +219,19 @@ const setConnectConfig = (status, text, color) =>{
 // 滾動至底部
 const scrollToBottom = () =>{
   if (messageContainer.value) {
+    // 更新狀態為在底部
     messageContainer.value.scrollTop = messageContainer.value.scrollHeight;
-    isAtBottom.value = true; // 更新狀態為在底部
+    isAtBottom.value = true;
   }
 }
 
-const handleScroll = (event) =>{
+const handleScroll = () =>{
   if (messageContainer.value) {
     const { scrollTop, scrollHeight, clientHeight } = messageContainer.value;
+
     isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 10; // 判斷是否接近底部
     if (isAtBottom.value) {
-      showUnRead.value = false; // 如果在底部，隱藏未讀提示
+      showUnRead.value = false; // 如果在底部，隱藏未讀訊息
     } 
   }
 }
@@ -324,12 +320,10 @@ const checkIsURL = (message) =>{
 </style>
 
 <!-- 
-  1. 針對於滾輪那裡的程式碼要稍微研究一下
-
   ** 如果要用 textarea 會有以下 3 個問題, 但如果用 input 就不會有這些問題
-  2. 輸入欄位換成 textarea, shift + enter 換行, enter 發送訊息(要研究, 而且要自動將滾輪移動至最下面) => 這個有點麻煩, 可以先不搞這個
-  3. 輸入欄位有 max-height, 超過就要出現滾動條, 然後抱著他們(textarea + button)的 container 也要自同調整高度
-  4. continaer 調整高度時, 上面的內容要自通調整高度還位置...
+  1. 輸入欄位換成 textarea, shift + enter 換行, enter 發送訊息(要研究, 而且要自動將滾輪移動至最下面) => 這個有點麻煩, 可以先不搞這個
+  2. 輸入欄位有 max-height, 超過就要出現滾動條, 然後抱著他們(textarea + button)的 container 也要自同調整高度
+  3. container 調整高度時, 上面的內容要自通調整高度還位置...
 
-  ** 如果還要新增其他功能, 比如說與 Firebase 串接, 製作自創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
+  ** 如果還要新增其他功能, 比如說與 Firebase 串接, 自行創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
 -->
