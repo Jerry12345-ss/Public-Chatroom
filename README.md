@@ -1,35 +1,38 @@
-# public-chatroom
+# Public Chatroom 
 
-This template should help get you started developing with Vue 3 in Vite.
+## Description
 
-## Recommended IDE Setup
+Public Chatroom 是個公開頻道的聊天室, 以前端 `Vue3 Composition API` + 後端 `Express` / `WebSocket` 建置即時聊天的功能
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+![Public Chatroom Demo Picture](./src/assets/img/demo.png)
 
-## Customize configuration
+## Build with
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+前端
+- `Vue3 Compostion API (setup)`
+- `SCSS`
+- `Javascript`
+- `Tailwind CSS`
 
-## Project Setup
+後端
+- `Express`
+- `WebSocket`
 
-```sh
-npm install
-```
+## Features
 
-### Compile and Hot-Reload for Development
+-  提供即時聊天
+-  顯示未讀訊息
 
-```sh
+## How to use
+
+前端使用以下指令啟動:
+```bash
 npm run dev
 ```
 
-### Compile and Minify for Production
+後端使用以下指令啟動伺服器:
+```bash
+cd server
 
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
+node server.js
 ```
