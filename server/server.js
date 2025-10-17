@@ -1,7 +1,7 @@
 const express = require('express');
 const SocketService = require('ws').Server;
 
-const PORT = '8030';
+const PORT = '8040';
 
 const server = express().listen(PORT, ()=>{
     console.log(`Server Listen on PORT ${PORT}`);
@@ -16,7 +16,7 @@ wss.on('connection', (ws)=>{
 
     // 連線錯誤
     ws.on('error',(err)=>{
-        console.log('WebSocket 連線發生錯誤 : ', err); 
+        console.log('WebSocket 連線發生錯誤 : ', err);
     });
 
     // 接收訊息
@@ -44,7 +44,7 @@ wss.on('connection', (ws)=>{
 // 廣播訊息
 const broadCastMessages = (data, ws) =>{
     const message = JSON.stringify(data);
-    
+
     let clients = wss.clients;
 
     clients.forEach((client) =>{

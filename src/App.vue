@@ -6,7 +6,7 @@
         <div class="chatroom-info flex flex-col gap-2 items-center md:items-start md:w-[270px]">
           <h1 class="text-3xl !font-medium py-4 text-gray-700 pt-8">簡易公開聊天室</h1>
 
-          <div class="flex flex-col gap-2 flex-wrap items-center md:items-start">
+          <div class="flex flex-col gap-1 flex-wrap items-center md:items-start">
             <div class="flex gap-1">
               <div>用戶名稱 :</div>
               <div>{{ username }}</div>
@@ -15,7 +15,7 @@
               <div>當前時間 :</div>
               <DynamicDateTime/>
             </div>
-  
+
             <!-- 連線狀態 -->
             <div class="status-container">
               <div class="flex gap-1 flex-wrap" :class="['status', { connect : isConnected }]">
@@ -27,14 +27,14 @@
         </div>
 
         <!-- 聊天室 -->
-        <div class="chat-container h-[850px] w-full min-w-[280px] max-w-[500px] rounded border border-gray-300">
+        <div class="chat-container w-full min-w-[280px] max-w-[500px] rounded border border-gray-300">
           <div class="flex flex-col justify-between h-full relative">
             <div class="messages-container flex-1 overflow-y-auto" ref="messageContainer" @scroll="handleScroll">
               <div class="p-4">
                 <div class="flex flex-col gap-4">
                   <div v-for="message in messages" :key="message.time" :id="message.time">
                     <div class="flex flex-col" :class="{'max-w-[70%]' : message.type !== 'system', 'ml-auto items-end' : message.type === 'myself', 'mr-auto items-start' : message.type === 'other' }">
-                      <div class="p-4 rounded inline-block h-auto w-full message-content" 
+                      <div class="p-4 rounded inline-block h-auto w-full message-content"
                         :class="[messageBgColor(message), { '!w-fit' : message.type !== 'system' } ]"
                         >
                         <div class="flex flex-col">
@@ -47,7 +47,7 @@
                               <a :href="message.content" target="_blank" class="text-blue-500 underline" style="word-wrap: break-word; word-break: break-all; white-space: pre-wrap;">{{ message.content }}</a>
                             </template>
                           </div>
-                          
+
                           <div class="text-xs text-gray-400 mt-2">{{ message.time }}</div>
                         </div>
                       </div>
@@ -76,9 +76,9 @@
 
               <div class="flex gap-4 h-full">
                 <!-- 這裡要用 keypress, 不能用 keydown(差異在於中文輸入有無問題) -->
-                <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected" :class="{ 'cursor-not-allowed' : !isConnected }" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
+                <input v-model.trim="clientMessage" @keypress.enter="sendMessage" :disabled="!isConnected"  :class="[ 'min-h-[40px]', { 'cursor-not-allowed' : !isConnected }]" type="text" :placeholder="!isConnected ? '連線發生錯誤 ,暫時無法輸入' : '輸入訊息...'" class="h-full border border-[#adb163] rounded bg-[#eff1c9] flex-1 outline-none px-4">
 
-                <!-- <textarea 
+                <!-- <textarea
                   v-model.trim="clientMessage"
                   @keypress.enter="sendMessage"
                   :disabled="!isConnected"
@@ -121,7 +121,7 @@ const showUnRead = ref(false);
 const unReadData = ref({});
 
 onMounted(()=>{
-  connectWebSocket(); 
+  connectWebSocket();
 });
 
 onUnmounted(()=>{
@@ -137,7 +137,7 @@ const messageBgColor = ((message)=>{
 
 // 建立與 WebSocket 連線
 const connectWebSocket = () =>{
-  socket.value = new WebSocket('ws://localhost:8030');
+  socket.value = new WebSocket('ws://localhost:8040');
 
   socket.value.onopen = () =>{
     console.log('open websocket connection');
@@ -148,7 +148,7 @@ const connectWebSocket = () =>{
       sender : '系統',
       content : `${username.value} 已加入聊天室!`,
       time : new Date().toLocaleTimeString(),
-      type : 'system' 
+      type : 'system'
     };
     socket.value.send(JSON.stringify(message));
 
@@ -160,7 +160,7 @@ const connectWebSocket = () =>{
     const message = JSON.parse(event.data);
 
     if(message.sender !== '系統') message.type = message.sender === username.value ? 'myself' : 'other';
-    
+
     checkIsURL(message);
     messages.value.push({
       ...message,
@@ -179,7 +179,7 @@ const connectWebSocket = () =>{
       }else{
         showUnRead.value = true;
         unReadData.value = message;
-      } 
+      }
     }
   }
 
@@ -232,7 +232,7 @@ const handleScroll = () =>{
     isAtBottom.value = scrollTop + clientHeight >= scrollHeight - 10; // 判斷是否接近底部
     if (isAtBottom.value) {
       showUnRead.value = false; // 如果在底部，隱藏未讀訊息
-    } 
+    }
   }
 }
 
@@ -295,13 +295,14 @@ const checkIsURL = (message) =>{
 }
 
 .chat-container{
+  height: 85vh;
   background : {
     image : url('../src/assets/img/chatroom-bg.jpg');
     position : center;
     size : cover;
     repeat : no-repeat;
   }
-  
+
   .message-content{
     min-height: fit-content;
     @include boxShadow(0, 0, 15px, 3px, rgba(0, 0, 0, .2));
@@ -310,7 +311,7 @@ const checkIsURL = (message) =>{
   .message-btn{
     &.disabled{
       @include backGround(rgb(146, 145, 145));
-    } 
+    }
   }
 
   .unread-container{
@@ -319,11 +320,11 @@ const checkIsURL = (message) =>{
 }
 </style>
 
-<!-- 
+<!--
   ** 如果要用 textarea 會有以下 3 個問題, 但如果用 input 就不會有這些問題
   1. 輸入欄位換成 textarea, shift + enter 換行, enter 發送訊息(要研究, 而且要自動將滾輪移動至最下面) => 這個有點麻煩, 可以先不搞這個
   2. 輸入欄位有 max-height, 超過就要出現滾動條, 然後抱著他們(textarea + button)的 container 也要自同調整高度
   3. container 調整高度時, 上面的內容要自通調整高度還位置...
 
-  ** 如果還要新增其他功能, 比如說與 Firebase 串接, 自行創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充 
+  ** 如果還要新增其他功能, 比如說與 Firebase 串接, 自行創建使用者、聊天訊息儲存(依照日期時間儲存)之類的, 更甚至傳送圖片之類的, 這些都可以再進行擴充
 -->
